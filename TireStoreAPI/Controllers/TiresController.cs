@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TireStoreApi.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace TireStoreApi.Controllers
 {
@@ -9,24 +11,27 @@ namespace TireStoreApi.Controllers
     [ApiController]
     public class TiresController : ControllerBase
     {
-        private static List<Tire> tires = new List<Tire>
+        private readonly TireStoreContext _context;
+
+        public TiresController(TireStoreContext context)
         {
-            new Tire { Id = 1, Brand = "Michelin", Model = "Pilot Sport", Size = "205/55R16", Price = 150 },
-            new Tire { Id = 2, Brand = "Goodyear", Model = "Eagle F1", Size = "225/45R17", Price = 180 }
-        };
+            _context = context;
+        }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Tire>> GetTires()
+        public async Task<ActionResult<IEnumerable<Tire>>> GetTires()
         {
-            return Ok(tires);
+            var tiresFromDb = await _context.Tires.ToListAsync(); // Extrage datele din baza de date SQL Server
+            return Ok(tiresFromDb);
         }
 
         [HttpPost]
-        public ActionResult AddTire(Tire tire)
+        public async Task<ActionResult<Tire>> AddTire(Tire tire)
         {
-            tire.Id = tires.Count + 1;
-            tires.Add(tire);
+            _context.Tires.Add(tire);
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetTires), new { id = tire.Id }, tire);
         }
     }
 }
+
