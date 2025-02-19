@@ -12,7 +12,15 @@ builder.Services.AddDbContext<TireStoreContext>(options =>
 
 // Configurare Swagger
 builder.Services.AddEndpointsApiExplorer();
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3001")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -21,6 +29,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowFrontend");
 
 app.UseRouting();
 app.MapControllers();
