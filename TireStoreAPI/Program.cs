@@ -13,6 +13,8 @@ builder.Services.AddDbContext<TireStoreContext>(options =>
 // Configurare Swagger
 builder.Services.AddEndpointsApiExplorer();
 
+
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
