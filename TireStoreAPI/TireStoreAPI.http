@@ -1,0 +1,6 @@
+@TireStoreAPI_HostAddress = http://localhost:5258
+
+GET {{TireStoreAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
