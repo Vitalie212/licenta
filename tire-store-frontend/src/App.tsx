@@ -1,27 +1,33 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router';
-import Navbar from './components/Navbar'; // Importă Navbar
-import Footer from './components/Footer'; // Importă Footer
-import TireList from './components/TireList'; // Importă TireList
-import SearchBar from './components/SearchBar'; // Importă SearchBar
-import CategoryMenu from './components/CategoryMenu'; // Importă CategoryMenu
-import HomePage from './pages/HomePage'; // Importă HomePage
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import TireList from "./components/TireList";
+import HomePage from "./pages/HomePage";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App: React.FC = () => {
   return (
     <Router>
       <div>
-        {/* Navbar component */}
+        {/* Navbar */}
         <Navbar />
 
-        {/* Configurare rute */}
+        {/* Rute */}
         <Routes>
-          <Route path="/" element={<HomePage />} /> {/* Pagina de start */}
-          {/* Adaugă rute suplimentare pentru alte pagini dacă este necesar */}
-          <Route path="/tirelist" element={<TireList />} /> {/* Exemplu de ruta pentru TireList */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/tirelist" element={<TireList />} />
+
+          {/* Rute protejate */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Routes>
 
-        {/* Footer component */}
+        {/* Footer */}
         <Footer />
       </div>
     </Router>

@@ -105,8 +105,10 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 
 // ✅ Middleware pentru autentificare și autorizare
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 // ✅ Definim rutele aplicației
 app.UseRouting();
