@@ -1,12 +1,17 @@
 // src/components/Navbar.tsx
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { getToken, logout } from "../services/authService";
 
 const Navbar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const token = getToken(); // ✅ Verifică dacă utilizatorul este autentificat
+  const [token, setToken] = useState(getToken());
   const navigate = useNavigate();
+  const location = useLocation(); // Verifică ruta activă pentru evidențiere
+
+  useEffect(() => {
+    setToken(getToken());
+  }, [location]); // Actualizează token-ul când ruta se schimbă
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
@@ -14,8 +19,10 @@ const Navbar: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login"); // ✅ Redirecționează utilizatorul la pagina de login
-  };
+    setToken(""); // ✅ Actualizează starea cu un string gol
+    navigate("/login"); // ✅ Redirecționează la pagina de login
+};
+
 
   return (
     <nav className="bg-blue-600 p-4 text-white">
@@ -28,22 +35,22 @@ const Navbar: React.FC = () => {
         {/* Meniu de navigare */}
         <ul className="flex space-x-4">
           <li>
-            <Link to="/" className="text-white">
+            <Link to="/" className={location.pathname === "/" ? "text-yellow-400 font-bold" : "text-white"}>
               Acasă
             </Link>
           </li>
           <li>
-            <Link to="/delivery" className="text-white">
+            <Link to="/delivery" className={location.pathname === "/delivery" ? "text-yellow-400 font-bold" : "text-white"}>
               Plata și livrarea
             </Link>
           </li>
           <li>
-            <Link to="/promotions" className="text-white">
+            <Link to="/promotions" className={location.pathname === "/promotions" ? "text-yellow-400 font-bold" : "text-white"}>
               Promoții
             </Link>
           </li>
           <li>
-            <Link to="/contact" className="text-white">
+            <Link to="/contact" className={location.pathname === "/contact" ? "text-yellow-400 font-bold" : "text-white"}>
               Contact
             </Link>
           </li>
@@ -86,21 +93,26 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
 
-        {/* Autentificare / Logout */}
-        <div className="text-white">
-          {token ? (
-            <>
-              <Link to="/dashboard" className="mr-4">Dashboard</Link>
-              <button onClick={handleLogout} className="bg-red-500 px-4 py-2 rounded">
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="bg-green-500 px-4 py-2 rounded">
-              Login
-            </Link>
-          )}
-        </div>
+     {/* Autentificare / Logout */}
+<div className="text-white flex space-x-4">
+  {token ? (
+    <>
+      <Link to="/dashboard" className="mr-4">Dashboard</Link>
+      <button onClick={handleLogout} className="bg-red-500 px-4 py-2 rounded">
+        Logout
+      </button>
+    </>
+  ) : (
+    <>
+      <Link to="/login" className="bg-green-500 px-4 py-2 rounded">
+        Login
+      </Link>
+      <Link to="/register" className="bg-blue-500 px-4 py-2 rounded">
+        Register
+      </Link>
+    </>
+  )}
+</div>
       </div>
     </nav>
   );
