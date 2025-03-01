@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TireStoreApi.Models;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ namespace TireStoreApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Protejează toate rutele din acest controller
     public class TiresController : ControllerBase
     {
         private readonly TireStoreContext _context;
@@ -21,6 +23,7 @@ namespace TireStoreApi.Controllers
 
         /// <summary>
         /// Obține toate anvelopele din baza de date sau le filtrează după criterii.
+        /// Accesibil doar utilizatorilor autentificați.
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Tire>>> GetTires(

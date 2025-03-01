@@ -1,40 +1,30 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using TireStoreApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace TireStoreApi.Services
 {
     public class AuthService
     {
+        private readonly TireStoreContext _context;
         private readonly string _secretKey;
-        private readonly List<User> _users = new()
-    {
-        new User { Username = "admin", Password = "admin123", Role = "Admin" },
-        new User { Username = "user", Password = "user123", Role = "User" }
-    };
 
-        public AuthService(IConfiguration configuration)
+        public AuthService(TireStoreContext context, IConfiguration configuration)
         {
-            _secretKey = configuration["JwtSettings:SecretKey"];
-
-            if (string.IsNullOrEmpty(_secretKey) || _secretKey.Length < 32)
-            {
-                throw new ArgumentNullException(nameof(_secretKey), "Cheia JWT lipsește sau este prea scurtă. Trebuie să aibă cel puțin 32 de caractere.");
-            }
+            _context = context;
+            _secretKey = configuration["JwtSettings:SecretKey"] ?? throw new ArgumentNullException("JWT Secret Key missing.");
         }
-    
 
-
-    public string Authenticate(string username, string password)
+        public async Task<string?> Authenticate(string username, string password)
         {
-            var existingUser = _users.FirstOrDefault(x => x.Username == username && x.Password == password);
-            if (existingUser == null) return null;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
+                return null; // Utilizatorul nu există sau parola este incorectă
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_secretKey);
@@ -43,8 +33,8 @@ namespace TireStoreApi.Services
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.Name, existingUser.Username),
-                    new Claim(ClaimTypes.Role, existingUser.Role) // Adaugă rolurile în token
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(2),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

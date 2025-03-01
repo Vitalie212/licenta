@@ -11,26 +11,26 @@ var builder = WebApplication.CreateBuilder(args);
 // Încarcă fișierul de configurare
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-// Asigură-te că setările JWT sunt corect configurate
+// ✅ Verifică setările JWT pentru a preveni excepții
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings["SecretKey"]))
 {
     throw new ArgumentNullException("JWT Secret Key is missing in configuration.");
 }
 
-// Configurare serviciu de autentificare
-builder.Services.AddSingleton<AuthService>();
+// ✅ Înregistrare serviciilor în Dependency Injection
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
+// Serviciu pentru gestionarea utilizatorilor
 
-// Adăugăm suport pentru controlere
+// ✅ Adăugăm suport pentru controlere și Swagger
 builder.Services.AddControllers();
-
-// Configurare Swagger cu suport pentru autentificare JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Tire Store API", Version = "v1" });
 
-    // Adăugăm suport pentru JWT în Swagger
+    // ✅ Adăugăm suport pentru JWT în Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -53,28 +53,28 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Configurare baza de date SQL Server
+// ✅ Configurare conexiune la baza de date SQL Server
 builder.Services.AddDbContext<TireStoreContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configurare CORS pentru frontend (React sau alt UI)
+// ✅ Configurare CORS pentru acces din frontend (React sau alt UI)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")  // Permite doar frontend-ul de pe localhost:3000
+        policy.WithOrigins("http://localhost:3000")  // Permite cereri doar de la frontend-ul React
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-// Configurare autentificare cu JWT
+// ✅ Configurare autentificare cu JWT
 var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = true; // HTTPS activat pentru securitate mai bună
+        options.RequireHttpsMetadata = false; // Poate fi activat în producție
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -90,7 +90,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-// Middleware pentru Swagger în mediul de dezvoltare
+// ✅ Middleware pentru Swagger în mod Development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -101,15 +101,16 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Activare CORS (trebuie plasat înainte de autentificare)
+// ✅ Activare CORS (trebuie plasat înainte de autentificare)
 app.UseCors("AllowFrontend");
 
-// Middleware pentru autentificare și autorizare
+// ✅ Middleware pentru autentificare și autorizare
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Definim rutele aplicației
+// ✅ Definim rutele aplicației
 app.UseRouting();
 app.MapControllers();
 
+// ✅ Rulează aplicația
 app.Run();
