@@ -1,19 +1,22 @@
-// src/components/TireCard.tsx
-import React from 'react';
-import { Tire } from '../types/Tire'; // Importăm tipul Tire
+import React from "react";
+import { Tire } from "../types/Tire";
 
-// Specificăm tipul tire ca fiind de tip Tire
-const TireCard: React.FC<{ tire: Tire }> = ({ tire }) => {
+interface TireCardProps {
+  tire: Tire;
+}
+
+const TireCard: React.FC<TireCardProps> = ({ tire }) => {
   return (
-    <div className="max-w-sm rounded overflow-hidden shadow-lg bg-white">
-      <img className="w-full" src={tire.image} alt="Tire" />
-      <div className="px-6 py-4">
-        <div className="font-bold text-xl mb-2">{tire.name}</div>
-        <p className="text-gray-700 text-base">{tire.description}</p>
-      </div>
-      <div className="px-6 py-4">
-        <span className="font-bold text-xl">{tire.price} MDL</span>
-      </div>
+    <div className="bg-white p-4 rounded-lg shadow-lg text-center">
+      {/* Imaginea anvelopei */}
+      <img src={`/images/${tire.image}`} alt={tire.name} className="w-full h-40 object-cover rounded-md" />
+
+      {/* Numele și descrierea */}
+      <h3 className="mt-2 text-lg font-bold">{tire.name}</h3>
+      <p className="text-gray-600 text-sm">{tire.description}</p>
+
+      {/* Prețul */}
+      <p className="mt-2 text-xl font-bold text-green-600">{tire.price} MDL</p>
     </div>
   );
 };

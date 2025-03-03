@@ -8,25 +8,32 @@ namespace TireStoreApi.Models
 
         [Required]
         [StringLength(100)]
-        public required string Brand { get; set; }
+        public required string Name { get; set; }  // 🔹 Numele anvelopei
 
         [Required]
         [StringLength(100)]
-        public required string Model { get; set; }
-
-        // Modificat de la float la decimal
-        [Required]
-        public decimal Width { get; set; }  // Aici schimbăm de la float la decimal
-
-        // Modificat de la float la decimal
-        [Required]
-        public decimal Height { get; set; }  // Aici schimbăm de la float la decimal
-
-        // Modificat de la float la decimal
-        [Required]
-        public decimal Diameter { get; set; }  // Aici schimbăm de la float la decimal
+        public required string Brand { get; set; }  // 🔹 Marca anvelopei (Michelin, Goodyear etc.)
 
         [Required]
-        public decimal Price { get; set; }
+        [StringLength(100)]
+        public required string Model { get; set; }  // 🔹 Modelul anvelopei
+
+        [StringLength(500)]
+        public string? Description { get; set; }  // 🔹 Descrierea anvelopei (opțională)
+
+        [Required]
+        public decimal Width { get; set; }  // 🔹 Lățimea anvelopei (ex. 205 mm)
+
+        [Required]
+        public decimal Height { get; set; }  // 🔹 Înălțimea anvelopei (ex. 55%)
+
+        [Required]
+        public decimal Diameter { get; set; }  // 🔹 Diametrul anvelopei (ex. R16)
+
+        [Required]
+        public decimal Price { get; set; }  // 🔹 Prețul anvelopei
+
+        [Required]
+        public string Image { get; set; } = "default-tire.jpg";  // 🔹 Link către imagine (ex. `/images/tire1.jpg`)
     }
 }
