@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using TireStoreApi.Models;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace TireStoreApi.Services
 {

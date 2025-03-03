@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TireStoreApi.Models;
+using BCrypt.Net;
 
 namespace TireStoreApi.Services
 {

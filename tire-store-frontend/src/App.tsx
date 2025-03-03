@@ -22,6 +22,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/tirelist" element={<TireList />} />
           <Route path="/register" element={<Register />} /> 
+          
           {/* Rute protejate */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -36,3 +37,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
