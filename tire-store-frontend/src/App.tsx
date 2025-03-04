@@ -5,36 +5,40 @@ import Footer from "./components/Footer";
 import TireList from "./components/TireList";
 import HomePage from "./pages/HomePage";
 import Login from "./pages/Login";
-import Register from "./pages/Register";  // ✅ Importăm pagina de înregistrare
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import CartPage from "./pages/CartPage";  // 🛒 Importă pagina coșului de cumpărături
 import ProtectedRoute from "./components/ProtectedRoute";
+import { CartProvider } from "./context/CartContext"; // 🛒 Importăm provider-ul pentru coș
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <div>
-        {/* Navbar */}
-        <Navbar />
+    <CartProvider> {/* 🛒 Acum coșul este accesibil global */}
+      <Router>
+        <div>
+          {/* Navbar */}
+          <Navbar />
 
-        {/* Rute */}
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/tirelist" element={<TireList />} />
-          <Route path="/register" element={<Register />} /> 
-          
-          {/* Rute protejate */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Route>
-        </Routes>
+          {/* Rute */}
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/tirelist" element={<TireList />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/cart" element={<CartPage />} /> {/* 🛒 Pagina coșului */}
 
-        {/* Footer */}
-        <Footer />
-      </div>
-    </Router>
+            {/* Rute protejate */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+          </Routes>
+
+          {/* Footer */}
+          <Footer />
+        </div>
+      </Router>
+    </CartProvider>
   );
 };
 
 export default App;
-
