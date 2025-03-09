@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 
-const SaveCardModal: React.FC = () => {
+interface SaveCardModalProps {
+  onClose: () => void; // ✅ Adăugăm onClose ca prop
+}
+
+const SaveCardModal: React.FC<SaveCardModalProps> = ({ onClose }) => {
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
@@ -33,6 +37,7 @@ const SaveCardModal: React.FC = () => {
       if (!response.ok) throw new Error(data.message || "Eroare la salvarea cardului.");
 
       alert("Card salvat cu succes!");
+      onClose(); // ✅ Închide modalul după salvare
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -52,6 +57,8 @@ const SaveCardModal: React.FC = () => {
       <button onClick={handleSaveCard} disabled={loading} className="bg-green-500 text-white">
         {loading ? "Se salvează..." : "Salvează Cardul"}
       </button>
+
+      <button onClick={onClose} className="bg-gray-500 text-white mt-2">Anulează</button>
     </div>
   );
 };

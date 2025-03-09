@@ -67,11 +67,6 @@ namespace TireStoreAPI.Controllers
                 var service = new SessionService();
                 Session session = await service.CreateAsync(options);
 
-                if (session == null || string.IsNullOrEmpty(session.Url))
-                {
-                    return StatusCode(500, new { message = "Eroare la crearea sesiunii Stripe." });
-                }
-
                 return Ok(new { url = session.Url });
             }
             catch (Exception ex)
@@ -91,24 +86,66 @@ namespace TireStoreAPI.Controllers
                     return BadRequest(new { message = "Email și PaymentMethodId sunt necesare." });
                 }
 
-                var customerOptions = new CustomerCreateOptions
-                {
-                    Email = request.Email,
-                    PaymentMethod = request.PaymentMethodId,
-                    InvoiceSettings = new CustomerInvoiceSettingsOptions
-                    {
-                        DefaultPaymentMethod = request.PaymentMethodId
-                    }
-                };
-
                 var customerService = new CustomerService();
-                var customer = await customerService.CreateAsync(customerOptions);
+                var customerList = await customerService.ListAsync(new CustomerListOptions { Email = request.Email });
+
+                Customer customer;
+                if (customerList.Data.Count > 0)
+                {
+                    customer = customerList.Data[0];
+                }
+                else
+                {
+                    var customerOptions = new CustomerCreateOptions
+                    {
+                        Email = request.Email,
+                        PaymentMethod = request.PaymentMethodId,
+                        InvoiceSettings = new CustomerInvoiceSettingsOptions
+                        {
+                            DefaultPaymentMethod = request.PaymentMethodId
+                        }
+                    };
+                    customer = await customerService.CreateAsync(customerOptions);
+                }
 
                 return Ok(new { customerId = customer.Id });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Eroare la salvarea cardului: " + ex.Message });
+            }
+        }
+
+        // ✅ Endpoint pentru verificarea cardurilor salvate ale unui utilizator
+        [HttpGet("saved-cards/{customerId}")]
+        public async Task<IActionResult> GetSavedCards(string customerId)
+        {
+            try
+            {
+                var paymentMethodService = new PaymentMethodService();
+                var paymentMethods = await paymentMethodService.ListAsync(new PaymentMethodListOptions
+                {
+                    Customer = customerId,
+                    Type = "card"
+                });
+
+                var cards = new List<object>();
+                foreach (var method in paymentMethods)
+                {
+                    cards.Add(new
+                    {
+                        method.Id,
+                        method.Card.Brand,
+                        method.Card.Last4,
+                        Expiry = $"{method.Card.ExpMonth}/{method.Card.ExpYear}"
+                    });
+                }
+
+                return Ok(new { cards });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Eroare la preluarea cardurilor salvate: " + ex.Message });
             }
         }
 
@@ -130,11 +167,11 @@ namespace TireStoreAPI.Controllers
                     Customer = request.CustomerId,
                     PaymentMethod = request.PaymentMethodId,
                     Confirm = true,
-                    ReturnUrl = "http://localhost:3000/success", // 🔹 Adaugă un URL de succes pentru redirecționare
+                    ReturnUrl = "http://localhost:3000/success",
                     AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
                     {
                         Enabled = true,
-                        AllowRedirects = "never" // 🔹 Blochează redirectările
+                        AllowRedirects = "never"
                     }
                 };
 

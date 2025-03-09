@@ -1,42 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import CheckoutButton from "../components/CheckoutButton";
 import { loadStripe } from "@stripe/stripe-js";
+import { useNavigate } from "react-router-dom";
 
 const stripePromise = loadStripe("PUBLISHABLE_KEY"); // 🔹 Înlocuiește cu cheia publică Stripe
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, clearCart } = useCart();
-  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const handleDirectPayment = async () => {
-    setPaymentProcessing(true);
-    setError(null);
-
-    try {
-      const response = await fetch("http://localhost:5258/api/Payments/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: cart.reduce((total, item) => total + item.price * item.quantity, 0) }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Eroare la procesarea plății.");
-      }
-
-      const stripe = await stripePromise;
-      if (stripe) {
-        const { error } = await stripe.redirectToCheckout({ sessionId: data.clientSecret });
-        if (error?.message) setError(error.message);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setPaymentProcessing(false);
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      alert("Trebuie să fii autentificat pentru a efectua o plată.");
+      navigate("/login");
     }
+  }, [navigate]);
+
+  const handleDirectPayment = () => {
+    navigate("/payment"); // 🔹 Redirecționează către pagina de plată
   };
 
   return (
@@ -85,11 +69,10 @@ const CartPage: React.FC = () => {
           <CheckoutButton />
 
           <button
-            onClick={handleDirectPayment}
+            onClick={handleDirectPayment} // 🔹 Acum deschide pagina de plată
             className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition"
-            disabled={paymentProcessing}
           >
-            {paymentProcessing ? "Se procesează..." : "Plătește direct cu cardul"}
+            💳 Plătește cu cardul
           </button>
 
           {error && <p className="text-red-500">{error}</p>}
