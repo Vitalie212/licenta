@@ -15,13 +15,22 @@ const TireCard: React.FC<TireCardProps> = ({ tire }) => {
       <h3 className="mt-2 text-lg font-bold">{tire.name}</h3>
       <p className="text-gray-600 text-sm">{tire.description}</p>
       <p className="mt-2 text-xl font-bold text-green-600">{tire.price} MDL</p>
-
       <button
-        onClick={() => addToCart({ ...tire, quantity: 1, imageUrl: tire.image })}
-        className="mt-3 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
-      >
-        🛒 Adaugă în Coș
-      </button>
+  onClick={() =>
+    addToCart({
+      id: tire.id,
+      name: tire.name,
+      description: tire.description,  // 🔹 Adăugăm descrierea
+      price: tire.price,
+      imageUrl: `/images/${tire.image}`,
+      quantity: 1,
+    })
+  }
+  className="mt-3 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+>
+  🛒 Adaugă în Coș
+</button>
+
     </div>
   );
 };

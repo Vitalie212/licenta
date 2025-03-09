@@ -1,15 +1,18 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { getToken } from "../services/authService"; // Funcție pentru a obține utilizatorul logat
 
 // 🛒 Definim tipul pentru un produs din coș
 interface CartItem {
   id: number;
   name: string;
+  description: string;  // 🔹 Adăugăm descrierea produsului
   price: number;
   imageUrl: string;
   quantity: number;
 }
 
-// 🔥 Definim tipul pentru context
+
+// Definim tipul contextului pentru coș
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
@@ -17,23 +20,28 @@ interface CartContextType {
   clearCart: () => void;
 }
 
-// 📌 Creăm contextul
+// Creăm contextul
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// 📌 Provider-ul pentru coș
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    // 📌 Preia datele din localStorage la reîncărcare
-    const storedCart = localStorage.getItem("cart");
-    return storedCart ? JSON.parse(storedCart) : [];
-  });
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const userToken = getToken(); // Obține utilizatorul logat
 
-  // 📌 Actualizează localStorage când coșul se schimbă
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    // Preluăm coșul utilizatorului curent din localStorage
+    if (userToken) {
+      const storedCart = localStorage.getItem(`cart_${userToken}`);
+      setCart(storedCart ? JSON.parse(storedCart) : []);
+    }
+  }, [userToken]);
 
-  // 🛒 Adaugă produs în coș
+  useEffect(() => {
+    // Salvăm coșul utilizatorului curent în localStorage
+    if (userToken) {
+      localStorage.setItem(`cart_${userToken}`, JSON.stringify(cart));
+    }
+  }, [cart, userToken]);
+
   const addToCart = (item: CartItem) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
@@ -48,12 +56,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  // ❌ Elimină produs din coș
   const removeFromCart = (id: number) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
-  // 🔄 Golește coșul
   const clearCart = () => {
     setCart([]);
   };
@@ -65,7 +71,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// 📌 Custom hook pentru utilizarea contextului coșului
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
