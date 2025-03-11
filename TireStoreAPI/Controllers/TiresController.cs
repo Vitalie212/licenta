@@ -4,6 +4,7 @@ using TireStoreApi.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace TireStoreApi.Controllers
 {
@@ -29,60 +30,167 @@ namespace TireStoreApi.Controllers
             [FromQuery] decimal? diameter,
             [FromQuery] string? brand,
             [FromQuery] decimal? minPrice,
-            [FromQuery] decimal? maxPrice)
+            [FromQuery] decimal? maxPrice,
+            [FromQuery] string? category)
         {
-            // 🔹 Loghează parametrii primiți pentru depanare
-            Console.WriteLine($"Received Filters: Width={width}, Height={height}, Diameter={diameter}, Brand={brand}, MinPrice={minPrice}, MaxPrice={maxPrice}");
-
-            var query = _context.Tires.AsQueryable(); // Inițializăm interogarea pentru toate anvelopele
-
-            // Aplicăm filtrele de căutare
-            if (width.HasValue)
+            try
             {
-                Console.WriteLine($"Filtering by Width: {width.Value}");
-                query = query.Where(t => t.Width == width.Value);
+                Console.WriteLine($"[API] Fetching tires with filters - Category: {category}");
+
+                var query = _context.Tires.AsNoTracking().AsQueryable();
+
+                // Aplicăm filtrele de căutare
+                if (width.HasValue) query = query.Where(t => t.Width == width.Value);
+                if (height.HasValue) query = query.Where(t => t.Height == height.Value);
+                if (diameter.HasValue) query = query.Where(t => t.Diameter == diameter.Value);
+                if (!string.IsNullOrEmpty(brand)) query = query.Where(t => t.Brand.Contains(brand));
+                if (minPrice.HasValue) query = query.Where(t => t.Price >= minPrice.Value);
+                if (maxPrice.HasValue) query = query.Where(t => t.Price <= maxPrice.Value);
+                if (!string.IsNullOrEmpty(category)) query = query.Where(t => t.Category.ToLower() == category.ToLower());
+
+                // ✅ Adaugăm fallback pentru imagine
+                var tires = await query
+                    .Select(t => new
+                    {
+                        t.Id,
+                        t.Name,
+                        t.Brand,
+                        t.Model,
+                        t.Description,
+                        t.Price,
+                        t.Category,
+                        Image = string.IsNullOrEmpty(t.Image) ? "default-tire.jpg" : t.Image // ✅ Asigură imagine implicită
+                    })
+                    .ToListAsync();
+
+                Console.WriteLine($"[API] Found {tires.Count} tires.");
+
+                if (!tires.Any())
+                {
+                    return NotFound(new { message = "Nu s-au găsit anvelope cu aceste criterii!" });
+                }
+
+                return Ok(tires);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[API ERROR] {ex.Message}");
+                return StatusCode(500, new { message = "A apărut o eroare internă.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Obține o anvelopă după ID.
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Tire>> GetTireById(int id)
+        {
+            Console.WriteLine($"[API] Fetching tire with ID: {id}");
+
+            var tire = await _context.Tires.AsNoTracking()
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Name,
+                    t.Brand,
+                    t.Model,
+                    t.Description,
+                    t.Price,
+                    t.Category,
+                    Image = string.IsNullOrEmpty(t.Image) ? "default-tire.jpg" : t.Image
+                })
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (tire == null)
+            {
+                return NotFound(new { message = $"Anvelopa cu ID-ul {id} nu a fost găsită." });
             }
 
-            if (height.HasValue)
+            return Ok(tire);
+        }
+
+        /// <summary>
+        /// Adaugă o anvelopă nouă în baza de date.
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<Tire>> CreateTire([FromBody] Tire tire)
+        {
+            try
             {
-                Console.WriteLine($"Filtering by Height: {height.Value}");
-                query = query.Where(t => t.Height == height.Value);
+                if (tire == null || string.IsNullOrEmpty(tire.Name) || string.IsNullOrEmpty(tire.Category))
+                {
+                    return BadRequest(new { message = "Datele anvelopei sunt invalide!" });
+                }
+
+                // ✅ Asigurăm că imaginea are un fallback
+                tire.Image = string.IsNullOrEmpty(tire.Image) ? "default-tire.jpg" : tire.Image;
+
+                _context.Tires.Add(tire);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[API] Tire added: {tire.Name}");
+
+                return CreatedAtAction(nameof(GetTireById), new { id = tire.Id }, tire);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[API ERROR] {ex.Message}");
+                return StatusCode(500, new { message = "Eroare la adăugarea anvelopei.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Actualizează o anvelopă existentă.
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTire(int id, [FromBody] Tire tire)
+        {
+            if (id != tire.Id)
+            {
+                return BadRequest(new { message = "ID-ul anvelopei nu corespunde!" });
             }
 
-            if (diameter.HasValue)
+            var existingTire = await _context.Tires.FindAsync(id);
+            if (existingTire == null)
             {
-                Console.WriteLine($"Filtering by Diameter: {diameter.Value}");
-                query = query.Where(t => t.Diameter == diameter.Value);
+                return NotFound(new { message = $"Anvelopa cu ID-ul {id} nu a fost găsită." });
             }
 
-            if (!string.IsNullOrEmpty(brand))
+            // ✅ Asigurăm că imaginea are un fallback
+            tire.Image = string.IsNullOrEmpty(tire.Image) ? "default-tire.jpg" : tire.Image;
+
+            _context.Entry(tire).State = EntityState.Modified;
+
+            try
             {
-                Console.WriteLine($"Filtering by Brand: {brand}");
-                query = query.Where(t => t.Brand.Contains(brand));
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"[API] Tire updated: {tire.Name}");
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return StatusCode(500, new { message = "Eroare la actualizarea anvelopei." });
+            }
+        }
+
+        /// <summary>
+        /// Șterge o anvelopă după ID.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTire(int id)
+        {
+            var tire = await _context.Tires.FindAsync(id);
+            if (tire == null)
+            {
+                return NotFound(new { message = $"Anvelopa cu ID-ul {id} nu a fost găsită." });
             }
 
-            if (minPrice.HasValue)
-            {
-                Console.WriteLine($"Filtering by MinPrice: {minPrice.Value}");
-                query = query.Where(t => t.Price >= minPrice.Value);
-            }
+            _context.Tires.Remove(tire);
+            await _context.SaveChangesAsync();
 
-            if (maxPrice.HasValue)
-            {
-                Console.WriteLine($"Filtering by MaxPrice: {maxPrice.Value}");
-                query = query.Where(t => t.Price <= maxPrice.Value);
-            }
+            Console.WriteLine($"[API] Tire deleted: {tire.Name}");
 
-            var tiresFromDb = await query.ToListAsync(); // Executăm interogarea și obținem rezultatele
-
-            // 🔹 Afișează numărul de anvelope găsite
-            Console.WriteLine($"Found {tiresFromDb.Count} tires.");
-
-            // Dacă nu s-au găsit anvelope, returnăm un mesaj de eroare
-            if (tiresFromDb.Count == 0)
-                return NotFound(new { message = "Nu s-au găsit anvelope cu aceste criterii!" });
-
-            return Ok(tiresFromDb); // Returnăm lista de anvelope
+            return NoContent();
         }
     }
 }

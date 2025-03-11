@@ -3,10 +3,11 @@ export interface Tire {
   name: string;
   brand: string;
   model: string;
+  description?: string; // ✅ Acum este opțional
   width: number;
   height: number;
   diameter: number;
   price: number;
-  image: string; // Adăugăm imaginea
-  description: string; // Adăugăm descrierea
+  category: string;
+  image?: string; // ✅ Permitem și `undefined`
 }

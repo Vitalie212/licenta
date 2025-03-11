@@ -34,6 +34,10 @@ namespace TireStoreApi.Models
         public decimal Price { get; set; }  // 🔹 Prețul anvelopei
 
         [Required]
+        [StringLength(100)]
+        public required string Category { get; set; }  // 🔹 Categoria (Autoturisme, SUV, Camioane, Agricole)
+
+        [Required]
         public string Image { get; set; } = "default-tire.jpg";  // 🔹 Link către imagine (ex. `/images/tire1.jpg`)
     }
 }

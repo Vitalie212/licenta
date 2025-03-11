@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Stripe;
 using Stripe.Checkout;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using TireStoreApi.Models;
+using TireStoreAPI.Models;
 
 namespace TireStoreAPI.Controllers
 {
@@ -13,25 +17,27 @@ namespace TireStoreAPI.Controllers
     public class PaymentsController : ControllerBase
     {
         private readonly string _stripeSecretKey;
+        private readonly TireStoreContext _context; // ✅ Injectare DB context
 
-        public PaymentsController(IConfiguration configuration)
+        public PaymentsController(IConfiguration configuration, TireStoreContext context)
         {
             _stripeSecretKey = configuration["Stripe:SecretKey"]
                 ?? throw new ArgumentNullException("Stripe SecretKey is missing.");
 
             StripeConfiguration.ApiKey = _stripeSecretKey;
+            _context = context;
         }
 
-        // ✅ Endpoint pentru crearea unei sesiuni de checkout cu Stripe
+        /// <summary>
+        /// ✅ Creează o sesiune de checkout cu Stripe
+        /// </summary>
         [HttpPost("create-checkout-session")]
         public async Task<IActionResult> CreateCheckoutSession([FromBody] List<CheckoutItem> cartItems)
         {
             try
             {
                 if (cartItems == null || cartItems.Count == 0)
-                {
                     return BadRequest(new { message = "Coșul este gol. Adaugă produse înainte de a efectua plata." });
-                }
 
                 var options = new SessionCreateOptions
                 {
@@ -45,9 +51,7 @@ namespace TireStoreAPI.Controllers
                 foreach (var item in cartItems)
                 {
                     if (string.IsNullOrWhiteSpace(item.Name) || item.Price <= 0 || item.Quantity <= 0)
-                    {
                         return BadRequest(new { message = "Datele produsului sunt invalide." });
-                    }
 
                     options.LineItems.Add(new SessionLineItemOptions
                     {
@@ -55,10 +59,7 @@ namespace TireStoreAPI.Controllers
                         {
                             Currency = "mdl",
                             UnitAmount = (long)(item.Price * 100),
-                            ProductData = new SessionLineItemPriceDataProductDataOptions
-                            {
-                                Name = item.Name
-                            }
+                            ProductData = new SessionLineItemPriceDataProductDataOptions { Name = item.Name }
                         },
                         Quantity = item.Quantity
                     });
@@ -75,136 +76,80 @@ namespace TireStoreAPI.Controllers
             }
         }
 
-        // ✅ Endpoint pentru salvarea cardului utilizatorului
-        [HttpPost("save-card")]
-        public async Task<IActionResult> SaveCard([FromBody] SaveCardRequest request)
+        /// <summary>
+        /// ✅ Salvează o plată în baza de date după ce a fost procesată de Stripe
+        /// </summary>
+        [HttpPost("save-payment")]
+        public async Task<IActionResult> SavePayment([FromBody] Payment payment)
         {
             try
             {
-                if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.PaymentMethodId))
-                {
-                    return BadRequest(new { message = "Email și PaymentMethodId sunt necesare." });
-                }
+                if (payment == null || string.IsNullOrEmpty(payment.UserId) || string.IsNullOrEmpty(payment.StripeSessionId))
+                    return BadRequest(new { message = "Datele plății sunt incomplete." });
 
-                var customerService = new CustomerService();
-                var customerList = await customerService.ListAsync(new CustomerListOptions { Email = request.Email });
+                _context.Payments.Add(payment);
+                await _context.SaveChangesAsync();
 
-                Customer customer;
-                if (customerList.Data.Count > 0)
-                {
-                    customer = customerList.Data[0];
-                }
-                else
-                {
-                    var customerOptions = new CustomerCreateOptions
-                    {
-                        Email = request.Email,
-                        PaymentMethod = request.PaymentMethodId,
-                        InvoiceSettings = new CustomerInvoiceSettingsOptions
-                        {
-                            DefaultPaymentMethod = request.PaymentMethodId
-                        }
-                    };
-                    customer = await customerService.CreateAsync(customerOptions);
-                }
-
-                return Ok(new { customerId = customer.Id });
+                return Ok(new { message = "Plata a fost salvată cu succes!" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Eroare la salvarea cardului: " + ex.Message });
+                return StatusCode(500, new { message = "Eroare la salvarea plății: " + ex.Message });
             }
         }
 
-        // ✅ Endpoint pentru verificarea cardurilor salvate ale unui utilizator
-        [HttpGet("saved-cards/{customerId}")]
-        public async Task<IActionResult> GetSavedCards(string customerId)
+        /// <summary>
+        /// ✅ Obține toate plățile din baza de date
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetPayments()
         {
             try
             {
-                var paymentMethodService = new PaymentMethodService();
-                var paymentMethods = await paymentMethodService.ListAsync(new PaymentMethodListOptions
-                {
-                    Customer = customerId,
-                    Type = "card"
-                });
-
-                var cards = new List<object>();
-                foreach (var method in paymentMethods)
-                {
-                    cards.Add(new
-                    {
-                        method.Id,
-                        method.Card.Brand,
-                        method.Card.Last4,
-                        Expiry = $"{method.Card.ExpMonth}/{method.Card.ExpYear}"
-                    });
-                }
-
-                return Ok(new { cards });
+                var payments = await _context.Payments.ToListAsync();
+                return Ok(payments);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Eroare la preluarea cardurilor salvate: " + ex.Message });
+                return StatusCode(500, new { message = "Eroare la preluarea plăților: " + ex.Message });
             }
         }
 
-        // ✅ Endpoint pentru plată cu un card salvat
-        [HttpPost("charge-saved-card")]
-        public async Task<IActionResult> ChargeSavedCard([FromBody] ChargeSavedCardRequest request)
+        /// <summary>
+        /// ✅ Obține o plată după ID
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPaymentById(int id)
         {
-            try
-            {
-                if (string.IsNullOrEmpty(request.CustomerId) || string.IsNullOrEmpty(request.PaymentMethodId) || request.Amount <= 0)
-                {
-                    return BadRequest(new { message = "Datele trimise sunt invalide." });
-                }
+            var payment = await _context.Payments.FindAsync(id);
+            if (payment == null)
+                return NotFound(new { message = $"Plata cu ID-ul {id} nu a fost găsită." });
 
-                var paymentIntentOptions = new PaymentIntentCreateOptions
-                {
-                    Amount = request.Amount * 100,
-                    Currency = "mdl",
-                    Customer = request.CustomerId,
-                    PaymentMethod = request.PaymentMethodId,
-                    Confirm = true,
-                    ReturnUrl = "http://localhost:3000/success",
-                    AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
-                    {
-                        Enabled = true,
-                        AllowRedirects = "never"
-                    }
-                };
+            return Ok(payment);
+        }
 
-                var paymentIntentService = new PaymentIntentService();
-                var paymentIntent = await paymentIntentService.CreateAsync(paymentIntentOptions);
+        /// <summary>
+        /// ✅ Șterge o plată după ID
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePayment(int id)
+        {
+            var payment = await _context.Payments.FindAsync(id);
+            if (payment == null)
+                return NotFound(new { message = $"Plata cu ID-ul {id} nu a fost găsită." });
 
-                return Ok(new { message = "Plată efectuată cu succes", paymentIntentId = paymentIntent.Id });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Eroare la procesarea plății: " + ex.Message });
-            }
+            _context.Payments.Remove(payment);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 
     // ✅ Modele pentru request
     public class CheckoutItem
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public int Quantity { get; set; }
-    }
-
-    public class SaveCardRequest
-    {
-        public string Email { get; set; }
-        public string PaymentMethodId { get; set; }
-    }
-
-    public class ChargeSavedCardRequest
-    {
-        public string CustomerId { get; set; }
-        public string PaymentMethodId { get; set; }
-        public int Amount { get; set; }
     }
 }

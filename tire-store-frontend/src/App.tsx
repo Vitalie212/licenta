@@ -13,6 +13,7 @@ import CancelPage from "./pages/CancelPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./context/CartContext"; 
 import PaymentPage from "./pages/PaymentPage"; 
+import CategoryPage from "./pages/CategoryPage"; // ✅ Importat noua pagină
 
 const App: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const App: React.FC = () => {
           <Route path="/payment" element={<PaymentPage />} /> 
           <Route path="/success" element={<SuccessPage />} /> 
           <Route path="/cancel" element={<CancelPage />} />   
+          <Route path="/category/:categoryName" element={<CategoryPage />} /> {/* ✅ Noua rută */}
 
           {/* Rute protejate */}
           <Route element={<ProtectedRoute />}>

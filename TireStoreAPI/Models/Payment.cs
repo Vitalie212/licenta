@@ -9,10 +9,12 @@ namespace TireStoreAPI.Models
         public int Id { get; set; } // 🔹 ID unic pentru plată
 
         [Required]
-        public string UserId { get; set; } // 🔹 ID-ul utilizatorului care a făcut plata
+        [StringLength(50)]
+        public string UserId { get; set; } = string.Empty; // 🔹 ID-ul utilizatorului care a făcut plata
 
         [Required]
-        public string StripeSessionId { get; set; } // 🔹 ID-ul sesiunii Stripe pentru verificare
+        [StringLength(100)]
+        public string StripeSessionId { get; set; } = string.Empty; // 🔹 ID-ul sesiunii Stripe pentru verificare
 
         [Required]
         public decimal Amount { get; set; } // 🔹 Suma totală a plății
@@ -21,6 +23,7 @@ namespace TireStoreAPI.Models
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow; // 🔹 Data plății
 
         [Required]
-        public string Status { get; set; } // 🔹 Statusul plății (ex: "pending", "paid", "failed")
+        [StringLength(20)]
+        public string Status { get; set; } = "pending"; // 🔹 Statusul plății (ex: "pending", "paid", "failed")
     }
 }
