@@ -14,7 +14,6 @@ namespace TireStoreApi.Controllers
     {
         private readonly TireStoreContext _context;
 
-        // Constructor pentru injectarea contextului bazei de date
         public TiresController(TireStoreContext context)
         {
             _context = context;
@@ -35,20 +34,26 @@ namespace TireStoreApi.Controllers
         {
             try
             {
-                Console.WriteLine($"[API] Fetching tires with filters - Category: {category}");
+                Console.WriteLine($"[API] Fetching tires - Filters: Category={category}, Width={width}, Height={height}, Diameter={diameter}, Brand={brand}, MinPrice={minPrice}, MaxPrice={maxPrice}");
 
                 var query = _context.Tires.AsNoTracking().AsQueryable();
 
-                // Aplicăm filtrele de căutare
+                // ✅ Aplicăm filtrele corect
                 if (width.HasValue) query = query.Where(t => t.Width == width.Value);
                 if (height.HasValue) query = query.Where(t => t.Height == height.Value);
                 if (diameter.HasValue) query = query.Where(t => t.Diameter == diameter.Value);
                 if (!string.IsNullOrEmpty(brand)) query = query.Where(t => t.Brand.Contains(brand));
                 if (minPrice.HasValue) query = query.Where(t => t.Price >= minPrice.Value);
                 if (maxPrice.HasValue) query = query.Where(t => t.Price <= maxPrice.Value);
-                if (!string.IsNullOrEmpty(category)) query = query.Where(t => t.Category.ToLower() == category.ToLower());
 
-                // ✅ Adaugăm fallback pentru imagine
+                // ✅ Filtrare corectă pentru categorie (evităm diferențe de spațiere și majuscule)
+                if (!string.IsNullOrEmpty(category))
+                {
+                    string normalizedCategory = category.ToLower().Trim();
+                    query = query.Where(t => t.Category.ToLower().Trim() == normalizedCategory);
+                }
+
+                // ✅ Construim răspunsul JSON pentru frontend
                 var tires = await query
                     .Select(t => new
                     {
@@ -59,7 +64,9 @@ namespace TireStoreApi.Controllers
                         t.Description,
                         t.Price,
                         t.Category,
-                        Image = string.IsNullOrEmpty(t.Image) ? "default-tire.jpg" : t.Image // ✅ Asigură imagine implicită
+                        Image = !string.IsNullOrEmpty(t.Image) && !t.Image.StartsWith("/images/")
+                            ? $"/images/{t.Image}"
+                            : t.Image ?? "/images/default-tire.jpg"
                     })
                     .ToListAsync();
 
@@ -97,7 +104,9 @@ namespace TireStoreApi.Controllers
                     t.Description,
                     t.Price,
                     t.Category,
-                    Image = string.IsNullOrEmpty(t.Image) ? "default-tire.jpg" : t.Image
+                    Image = !string.IsNullOrEmpty(t.Image) && !t.Image.StartsWith("/images/")
+                        ? $"/images/{t.Image}"
+                        : t.Image ?? "/images/default-tire.jpg"
                 })
                 .FirstOrDefaultAsync(t => t.Id == id);
 
@@ -122,7 +131,6 @@ namespace TireStoreApi.Controllers
                     return BadRequest(new { message = "Datele anvelopei sunt invalide!" });
                 }
 
-                // ✅ Asigurăm că imaginea are un fallback
                 tire.Image = string.IsNullOrEmpty(tire.Image) ? "default-tire.jpg" : tire.Image;
 
                 _context.Tires.Add(tire);
@@ -156,7 +164,6 @@ namespace TireStoreApi.Controllers
                 return NotFound(new { message = $"Anvelopa cu ID-ul {id} nu a fost găsită." });
             }
 
-            // ✅ Asigurăm că imaginea are un fallback
             tire.Image = string.IsNullOrEmpty(tire.Image) ? "default-tire.jpg" : tire.Image;
 
             _context.Entry(tire).State = EntityState.Modified;

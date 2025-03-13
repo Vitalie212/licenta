@@ -9,20 +9,21 @@ interface TireCardProps {
 const TireCard: React.FC<TireCardProps> = ({ tire }) => {
   const { addToCart } = useCart();
 
-  // ✅ Construim calea imaginii corect
-  const imageUrl = tire.image?.startsWith("http")
-    ? tire.image // Folosim URL-ul absolut dacă există
-    : `/images/${tire.image || "default-tire.jpg"}`; // Adăugăm `/images/` pentru numele fișierului
+  // ✅ Construim calea imaginii corect (URL absolut sau fișier local)
+  const imageUrl =
+    tire.image?.startsWith("http") || tire.image?.startsWith("/images/")
+      ? tire.image
+      : `/images/${tire.image?.trim() || "default-tire.jpg"}`;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-lg text-center border border-gray-200 hover:shadow-xl transition duration-300">
       {/* ✅ Container pentru imagine */}
-      <div className="w-full h-40 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
+      <div className="w-full h-44 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
         <img
           src={imageUrl}
           alt={tire.name}
           className="w-full h-full object-cover"
-          onError={(e) => (e.currentTarget.src = "/images/default-tire.jpg")} // ✅ Fallback pentru imagine
+          onError={(e) => (e.currentTarget.src = "/images/default-tire.jpg")} // ✅ Fallback dacă imaginea lipsește
         />
       </div>
 
@@ -30,9 +31,14 @@ const TireCard: React.FC<TireCardProps> = ({ tire }) => {
       <h3 className="mt-3 text-lg font-bold text-gray-800">{tire.name}</h3>
       <p className="text-gray-500 text-sm">{tire.brand} - {tire.model}</p>
 
-      {/* ✅ Descriere cu fallback */}
+      {/* ✅ Descriere (fallback dacă nu există) */}
       <p className="mt-2 text-sm text-gray-600">
-        {tire.description || "Descriere indisponibilă"}
+        {tire.description?.trim() || "Descriere indisponibilă"}
+      </p>
+
+      {/* ✅ Dimensiuni */}
+      <p className="text-gray-600 text-sm">
+        Dimensiuni: {tire.width} / {tire.height} R{tire.diameter}
       </p>
 
       {/* ✅ Preț afișat clar */}

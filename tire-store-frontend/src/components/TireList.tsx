@@ -10,15 +10,25 @@ const TireList: React.FC = () => {
 
   useEffect(() => {
     const loadTires = async () => {
-      setLoading(true);
-      setError(null);
-
       try {
+        setLoading(true);
+        setError(null);
+
         const data = await fetchTires();
-        const processedData = data.map((tire) => ({
-          ...tire,
-          image: tire.image || "/images/default-tire.jpg", // ✅ Fallback pentru `image`
+        const processedData: Tire[] = data.map((tire: any) => ({
+          id: tire.id,
+          name: tire.name,
+          brand: tire.brand,
+          model: tire.model,
+          description: tire.description || "Descriere indisponibilă", // ✅ Fix pentru `undefined`
+          width: tire.width,
+          height: tire.height,
+          diameter: tire.diameter,
+          price: tire.price,
+          category: tire.category,
+          image: tire.image || "/images/default-tire.jpg", // ✅ Fix pentru imagine lipsă
         }));
+
         setTires(processedData);
       } catch (err) {
         console.error("Eroare la încărcarea anvelopelor:", err);
@@ -41,11 +51,9 @@ const TireList: React.FC = () => {
         <p className="text-center mt-6 text-red-500">{error}</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tires.length > 0 ? (
-            tires.map((tire) => <TireCard key={tire.id} tire={tire} />)
-          ) : (
-            <p className="text-center mt-6">Nu s-au găsit anvelope.</p>
-          )}
+          {tires.map((tire) => (
+            <TireCard key={tire.id} tire={tire} />
+          ))}
         </div>
       )}
     </div>
