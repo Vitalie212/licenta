@@ -1,45 +1,47 @@
 import React, { useState } from "react";
-import { getTires } from "../api";
+import axios from "axios";
 
-// Definirea tipului pentru o anvelopă
+// ✅ Definirea tipului de date pentru anvelope
 interface Tire {
   id: number;
+  name: string;
   brand: string;
   model: string;
   width: number;
   height: number;
   diameter: number;
   price: number;
+  image?: string;
 }
 
 const SearchBar: React.FC = () => {
-  const [width, setWidth] = useState<string>("");
-  const [height, setHeight] = useState<string>("");
-  const [diameter, setDiameter] = useState<string>("");
-  const [tires, setTires] = useState<Tire[] | null>(null);
+  const [query, setQuery] = useState<string>(""); // 🔹 Căutare generală (marcă, dimensiune etc.)
+  const [tires, setTires] = useState<Tire[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Funcția pentru a căuta anvelope pe API
   const fetchTires = async () => {
-    if (!width || !height || !diameter) {
-      setError("Introduceți toate dimensiunile!");
+    if (!query.trim()) {
+      setError("Introduceți un termen de căutare!");
       return;
     }
 
     try {
       setError(null);
       setLoading(true);
-      console.log("Fetching tires with:", { width, height, diameter }); // Debugging
-      const data = await getTires(width, height, diameter);
-      console.log("Received data:", data); // Debugging
-      setTires(data.length ? data : null);
+      console.log(`🔍 Căutare anvelope pentru: ${query}`);
+      const response = await axios.get(`http://localhost:5258/api/tires?query=${query}`);
+      setTires(response.data.length ? response.data : []);
     } catch (error) {
-      setError("Eroare la obținerea anvelopelor. Vă rugăm să încercați din nou.");
+      console.error("❌ Eroare la încărcarea anvelopelor:", error);
+      setError("Eroare la căutare. Verifică conexiunea la server.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Gestionarea căutării la apăsarea Enter sau butonului
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchTires();
@@ -47,56 +49,40 @@ const SearchBar: React.FC = () => {
 
   return (
     <div className="bg-gray-200 p-4 rounded-lg shadow-lg">
+      {/* ✅ Formular de căutare */}
       <form className="flex flex-wrap gap-4" onSubmit={handleSearch}>
         <input
-          type="number"
-          placeholder="Lățime (mm)"
-          value={width}
-          onChange={(e) => setWidth(e.target.value)}
-          className="p-2 rounded border border-gray-400 w-32"
-          min="100"
-          max="400"
-          required
-        />
-        <input
-          type="number"
-          placeholder="Înălțime (%)"
-          value={height}
-          onChange={(e) => setHeight(e.target.value)}
-          className="p-2 rounded border border-gray-400 w-32"
-          min="20"
-          max="90"
-          required
-        />
-        <input
-          type="number"
-          placeholder="Diametru (R)"
-          value={diameter}
-          onChange={(e) => setDiameter(e.target.value)}
-          className="p-2 rounded border border-gray-400 w-32"
-          min="10"
-          max="30"
+          type="text"
+          placeholder="Caută marcă, dimensiune..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="p-2 rounded border border-gray-400 flex-1 min-w-32"
           required
         />
         <button
           type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition w-32"
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
         >
           Căutare
         </button>
       </form>
 
-      {/* Loading State */}
+      {/* 🔄 Stare de încărcare */}
       {loading && <p className="mt-4 text-center text-gray-600">Se caută anvelope...</p>}
 
-      {/* Error Message */}
+      {/* ⚠️ Mesaj de eroare */}
       {error && <p className="mt-4 text-center text-red-500">{error}</p>}
 
-      {/* Display Search Results */}
-      {tires !== null ? (
+      {/* 📌 Rezultate căutare */}
+      {tires.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {tires.map((tire) => (
             <div key={tire.id} className="p-4 bg-white rounded-lg shadow">
+              <img
+                src={tire.image || "/images/default-tire.jpg"}
+                alt={tire.name}
+                className="w-full h-40 object-cover rounded-lg"
+              />
               <h3 className="font-semibold">{tire.brand} - {tire.model}</h3>
               <p className="text-gray-600">
                 {tire.width}mm / {tire.height}% / {tire.diameter}R

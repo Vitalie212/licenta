@@ -3,7 +3,11 @@ import TireCard from "./TireCard";
 import { Tire } from "../types/Tire";
 import { fetchTires } from "../services/tireService";
 
-const TireList: React.FC = () => {
+interface TireListProps {
+  searchQuery?: string;
+}
+
+const TireList: React.FC<TireListProps> = ({ searchQuery = "" }) => {
   const [tires, setTires] = useState<Tire[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,21 +19,29 @@ const TireList: React.FC = () => {
         setError(null);
 
         const data = await fetchTires();
+
         const processedData: Tire[] = data.map((tire: any) => ({
           id: tire.id,
           name: tire.name,
           brand: tire.brand,
           model: tire.model,
-          description: tire.description || "Descriere indisponibilă", // ✅ Fix pentru `undefined`
+          description: tire.description || "Descriere indisponibilă",
           width: tire.width,
           height: tire.height,
           diameter: tire.diameter,
           price: tire.price,
           category: tire.category,
-          image: tire.image || "/images/default-tire.jpg", // ✅ Fix pentru imagine lipsă
+          image: tire.image || "/images/default-tire.jpg",
         }));
 
-        setTires(processedData);
+        // 🔍 Filtrare după `searchQuery`
+        const filteredTires = processedData.filter((tire) =>
+          `${tire.name} ${tire.brand} ${tire.model} ${tire.width} ${tire.height} ${tire.diameter}`
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
+        );
+
+        setTires(filteredTires);
       } catch (err) {
         console.error("Eroare la încărcarea anvelopelor:", err);
         setError("Eroare la încărcarea anvelopelor. Te rugăm să încerci din nou.");
@@ -39,7 +51,7 @@ const TireList: React.FC = () => {
     };
 
     loadTires();
-  }, []);
+  }, [searchQuery]); // 🔁 Reîncarcă dacă se schimbă query-ul
 
   return (
     <div className="container mx-auto px-6 py-12">
@@ -49,6 +61,8 @@ const TireList: React.FC = () => {
         <p className="text-center mt-6">Se încarcă...</p>
       ) : error ? (
         <p className="text-center mt-6 text-red-500">{error}</p>
+      ) : tires.length === 0 ? (
+        <p className="text-center mt-6 text-gray-500">Nu s-au găsit anvelope.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {tires.map((tire) => (
