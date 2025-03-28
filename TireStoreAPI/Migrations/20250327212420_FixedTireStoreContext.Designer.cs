@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TireStoreApi.Models;
 
@@ -11,9 +12,11 @@ using TireStoreApi.Models;
 namespace TireStoreAPI.Migrations
 {
     [DbContext(typeof(TireStoreContext))]
-    partial class TireStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20250327212420_FixedTireStoreContext")]
+    partial class FixedTireStoreContext
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -123,9 +126,7 @@ namespace TireStoreAPI.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -141,9 +142,7 @@ namespace TireStoreAPI.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("User");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -166,7 +165,7 @@ namespace TireStoreAPI.Migrations
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@example.com",
                             FullName = "Admin User",
-                            Password = "$2a$11$jDzil0o5OatF1LgoVGoaIejqGj8UklW9xo3mwbjby756ozHaU32s.",
+                            Password = "$2a$11$5MRLq.GkDVTiBMh3WQcLT.hx4JAybfKsTtjBPUt./nAnAHcY1gH4G",
                             Role = "Admin",
                             Username = "admin"
                         },
@@ -176,7 +175,7 @@ namespace TireStoreAPI.Migrations
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "user@example.com",
                             FullName = "Test User",
-                            Password = "$2a$11$3q.0uIQH7eoU.JGX9SWFOeqDIX2BpCrEbfMa3i4A/DZx/Uq5Aq8Ze",
+                            Password = "$2a$11$cv/gRu/tUgrEyl/wuWJ5OeSZGPF/DGcCMhmuh58jsDDFf.6Uz6MiS",
                             Role = "User",
                             Username = "user"
                         });

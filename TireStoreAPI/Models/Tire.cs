@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TireStoreApi.Models
 {
     public class Tire
     {
+        [Key]
         public int Id { get; set; }
 
         [Required]
@@ -22,15 +24,19 @@ namespace TireStoreApi.Models
         public string? Description { get; set; }  // 🔹 Descrierea anvelopei (opțională)
 
         [Required]
+        [Column(TypeName = "decimal(18,2)")] // 🔹 Specificare precisă pentru a evita pierderea de date
         public decimal Width { get; set; }  // 🔹 Lățimea anvelopei (ex. 205 mm)
 
         [Required]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Height { get; set; }  // 🔹 Înălțimea anvelopei (ex. 55%)
 
         [Required]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Diameter { get; set; }  // 🔹 Diametrul anvelopei (ex. R16)
 
         [Required]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }  // 🔹 Prețul anvelopei
 
         [Required]

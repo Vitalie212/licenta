@@ -1,23 +1,27 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TireStoreAPI.Models
+namespace TireStoreApi.Models
 {
     public class UserRegister
     {
-        [Required]
-        public string Username { get; set; } = string.Empty; // ✅ Inițializare corectă
+        [Required(ErrorMessage = "Numele complet este obligatoriu.")]
+        public string FullName { get; set; } = string.Empty;  // ✅ `FullName` este necesar
 
-        [Required]
-        public string Password { get; set; } = string.Empty; // ✅ Inițializare corectă
+        [Required(ErrorMessage = "Username-ul este obligatoriu.")]
+        [MinLength(3, ErrorMessage = "Username-ul trebuie să aibă cel puțin 3 caractere.")]
+        public string Username { get; set; } = string.Empty;
 
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = string.Empty; // ✅ Adăugată validare pentru email
+        [Required(ErrorMessage = "Adresa de email este obligatorie.")]
+        [EmailAddress(ErrorMessage = "Introduceți o adresă de email validă.")]
+        public string Email { get; set; } = string.Empty;  // ✅ Adăugat `Email`
 
-        [Required]
-        public string Role { get; set; } = "user"; // ✅ Setare implicită pentru rol
+        [Required(ErrorMessage = "Parola este obligatorie.")]
+        [MinLength(6, ErrorMessage = "Parola trebuie să aibă cel puțin 6 caractere.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
 
-        [Required]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // ✅ Timpul de creare
+        public string Role { get; set; } = "user";  // ✅ Setare implicită pentru utilizatori normali
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;  // ✅ Salvare dată automat
     }
 }

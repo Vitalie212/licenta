@@ -16,7 +16,7 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
 if (string.IsNullOrEmpty(stripeSecretKey))
 {
-    throw new ArgumentNullException("Stripe SecretKey is missing in configuration.");
+    throw new ArgumentNullException(nameof(stripeSecretKey), "Stripe SecretKey is missing in configuration.");
 }
 StripeConfiguration.ApiKey = stripeSecretKey;
 
@@ -25,7 +25,7 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var jwtSecretKey = jwtSettings["SecretKey"];
 if (string.IsNullOrEmpty(jwtSecretKey))
 {
-    throw new ArgumentNullException("JWT Secret Key is missing in configuration.");
+    throw new ArgumentNullException(nameof(jwtSecretKey), "JWT Secret Key is missing in configuration.");
 }
 var key = Encoding.ASCII.GetBytes(jwtSecretKey);
 
@@ -35,14 +35,26 @@ builder.Services.AddScoped<UserService>();
 
 // ✅ Configurare conexiune la baza de date SQL Server
 builder.Services.AddDbContext<TireStoreContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ??
+                         throw new InvalidOperationException("Database connection string is missing.")));
 
 // ✅ Adăugăm suport pentru controlere și Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Tire Store API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Tire Store API",
+        Version = "v1",
+        Description = "API pentru gestionarea magazinului de anvelope",
+        Contact = new OpenApiContact
+        {
+            Name = "Tire Store Support",
+            Email = "support@tirestore.com"
+        }
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -52,6 +64,7 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Introduceți token-ul JWT în formatul: Bearer {your_token}"
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -71,7 +84,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 

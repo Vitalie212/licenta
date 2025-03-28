@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TireStoreApi.Models;
 
@@ -11,9 +12,11 @@ using TireStoreApi.Models;
 namespace TireStoreAPI.Migrations
 {
     [DbContext(typeof(TireStoreContext))]
-    partial class TireStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20250327221500_FixUsersTable")]
+    partial class FixUsersTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,7 +169,7 @@ namespace TireStoreAPI.Migrations
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@example.com",
                             FullName = "Admin User",
-                            Password = "$2a$11$jDzil0o5OatF1LgoVGoaIejqGj8UklW9xo3mwbjby756ozHaU32s.",
+                            Password = "$2a$11$8XCfItidt0ggRWf8BBdUEesvbkGlXBgsX1Snrro5U2TOrZjrLClYa",
                             Role = "Admin",
                             Username = "admin"
                         },
@@ -176,7 +179,7 @@ namespace TireStoreAPI.Migrations
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "user@example.com",
                             FullName = "Test User",
-                            Password = "$2a$11$3q.0uIQH7eoU.JGX9SWFOeqDIX2BpCrEbfMa3i4A/DZx/Uq5Aq8Ze",
+                            Password = "$2a$11$2osnqVxHCvnqR9hC/IeQkOq1zvV3L5X9nRQLbwpyO7CPuas8Pbxw.",
                             Role = "User",
                             Username = "user"
                         });

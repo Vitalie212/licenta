@@ -1,75 +1,75 @@
 import axios from "axios";
 
-// Configurare Axios cu backend-ul
-const API_URL = "http://localhost:5258/api";
+const API_URL = "http://localhost:5258/api/auth";  // ✅ Endpoint corect
 
-// ✅ Funcție de înregistrare a utilizatorilor
-export const register = async (username: string, password: string, role: string = "User") => {
+// ✅ Înregistrare utilizator
+export const register = async (fullName: string, username: string, email: string, password: string) => {
     try {
-        const data = { username, password, role :  "User" }; // Trimite rolul utilizatorului (implicit "User")
-
-        const response = await axios.post(`${API_URL}/User/register`, data, {
+        const response = await axios.post(`${API_URL}/register`, {
+            fullName,  
+            username,  
+            email,  
+            password,
+            role: "User",  
+        }, {
             headers: { "Content-Type": "application/json" },
         });
 
-        if (response.data) {
-            return { success: true, message: "Înregistrare reușită!" };
-        } else {
-            return { success: false, message: "Eroare la înregistrare. Răspuns invalid." };
-        }
+        return response.data?.token 
+            ? { success: true, message: "Înregistrare reușită!", token: response.data.token } 
+            : { success: false, message: "Eroare la înregistrare." };
     } catch (error: any) {
-        console.error("Eroare la înregistrare:", error);
-
-        if (error.response) {
-            return { success: false, message: error.response.data?.message || "Eroare la server." };
-        }
-
-        return { success: false, message: "Eroare de rețea. Verifică conexiunea la internet." };
+        console.error("Eroare la înregistrare:", error.response?.data);
+        return { success: false, message: error.response?.data?.message || "Eroare la server." };
     }
 };
 
-// ✅ Funcție de autentificare
-export const login = async (username: string, password: string) => {
+// ✅ Login utilizator
+export const login = async (email: string, password: string) => {
     try {
-        const data = { username, password, role: "admin" };
-
-        const response = await axios.post(`${API_URL}/Auth/login`, data, {
+        const response = await axios.post(`${API_URL}/login`, { email, password }, {
             headers: { "Content-Type": "application/json" },
         });
 
-        if (response.data && response.data.token) {
-            localStorage.setItem("token", response.data.token); // Stocăm token-ul
+        if (response.data?.token) {
+            localStorage.setItem("token", response.data.token);
             return { success: true, token: response.data.token };
         } else {
             return { success: false, message: "Autentificare eșuată. Răspuns invalid." };
         }
     } catch (error: any) {
-        console.error("Eroare la autentificare:", error);
-
-        if (error.response) {
-            return { success: false, message: error.response.data?.message || "Eroare la server." };
-        }
-
-        return { success: false, message: "Eroare de rețea. Verifică conexiunea la internet." };
+        return { success: false, message: error.response?.data?.message || "Eroare la server." };
     }
 };
 
-// ✅ Logout: șterge token-ul din localStorage
-export const logout = () => {
-    localStorage.removeItem("token");
+// ✅ Google Login
+export const googleLogin = async (credential: string) => {
+    try {
+        const response = await axios.post(`${API_URL}/google-login`, { token: credential }, {
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (response.data?.token) {
+            localStorage.setItem("token", response.data.token);
+            return { success: true, token: response.data.token };
+        } else {
+            return { success: false, message: "Autentificare Google eșuată. Răspuns invalid." };
+        }
+    } catch (error: any) {
+        return { success: false, message: error.response?.data?.message || "Eroare la server." };
+    }
 };
 
 // ✅ Obține token-ul curent
-export const getToken = () => {
-    return localStorage.getItem("token") || "";
-};
+export const getToken = () => localStorage.getItem("token") || "";
 
 // ✅ Verifică dacă utilizatorul este autentificat
-export const isAuthenticated = () => {
-    return !!getToken();
-};
+export const isAuthenticated = () => !!getToken();
 
-// ✅ Configurare Axios pentru a include token-ul în cererile HTTP
+// ✅ Logout: șterge token-ul din localStorage
+export const logout = () => localStorage.removeItem("token");
+
+// ✅ Adaugă token-ul în cererile Axios
 axios.interceptors.request.use(
     (config) => {
         const token = getToken();
@@ -78,7 +78,5 @@ axios.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
